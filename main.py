@@ -1,6 +1,8 @@
 from telegram.ext import Updater, CommandHandler
 
-TOKEN = "TON_TOKEN_ICI"
+TOKEN = "8491886952:AAFqAmIRXzvBZtXhEdh-1-N5wzO-hpRPNgc"
+
+
 CHAT_ID = 5136509892  # Ton chat ID personnel
 
 def start(update, context):
