@@ -1,60 +1,57 @@
 const puppeteer = require('puppeteer');
+const axios = require('axios');
+
+const BOT_TOKEN = process.env.BOT_TOKEN || '8491886952:AAFqAmIRXzvBZtXhEdh-1-N5wzO-hpRPNgc';
+const CHAT_ID = process.env.CHAT_ID || '5136509892';
+
+async function sendTelegramMessage(text) {
+  try {
+    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      chat_id: CHAT_ID,
+      text,
+    });
+    console.log('✅ Message Telegram envoyé');
+  } catch (err) {
+    console.error('⚠️ Erreur Telegram:', err.message);
+  }
+}
 
 async function scrape1xBet() {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
-  const page = await browser.newPage();
-
   try {
+    const page = await browser.newPage();
     await page.goto('https://1xbet.com/fr/line/football', { waitUntil: 'networkidle2' });
 
-    // Attendre que la liste des matchs soit chargée
-    await page.waitForSelector('.c-events__item'); // exemple de sélecteur de match, à ajuster selon site
+    // Exemple simplifié : récupérer le titre de la page
+    const title = await page.title();
 
-    // Extraire les matchs
-    const matches = await page.evaluate(() => {
-      const data = [];
-      const matchsElements = document.querySelectorAll('.c-events__item'); // à adapter si nécessaire
-      matchsElements.forEach(matchEl => {
-        const teams = matchEl.querySelector('.c-events__title')?.innerText.trim() || 'Match inconnu';
-        const markets = [];
+    // Ici, tu dois extraire les données nécessaires (matches, cotes, marchés)
+    // Par exemple, récupérer des cotes dans la page — à adapter selon structure réelle
 
-        // Trouver les marchés et cotes dans le match
-        const marketEls = matchEl.querySelectorAll('.c-bets'); // exemple, à vérifier
+    // Simulons une détection de surebet (à remplacer par vraie détection)
+    const surebetDetected = true;
 
-        marketEls.forEach(marketEl => {
-          const marketName = marketEl.querySelector('.c-bets__title')?.innerText.trim() || 'Marché inconnu';
-          const odds = [];
-
-          const oddEls = marketEl.querySelectorAll('.c-bets__button'); // boutons des cotes
-          oddEls.forEach(oddEl => {
-            const oddText = oddEl.innerText.trim();
-            odds.push(oddText);
-          });
-
-          markets.push({ marketName, odds });
-        });
-
-        data.push({ teams, markets });
-      });
-      return data;
-    });
-
-    // Afficher dans la console
-    for (const match of matches) {
-      console.log(`Match: ${match.teams}`);
-      for (const market of match.markets) {
-        console.log(`  Marché: ${market.marketName} | Cotes: ${market.odds.join(' | ')}`);
-      }
-      console.log('-----------------------------');
+    if (surebetDetected) {
+      await sendTelegramMessage(`Surebet détecté sur 1xBet!\nPage titre: ${title}`);
     }
+
   } catch (err) {
-    console.error('Erreur scraping 1xBet:', err);
+    console.error('Erreur scraping 1xBet:', err.message);
+    await sendTelegramMessage(`Erreur scraping 1xBet: ${err.message}`);
   } finally {
     await browser.close();
   }
 }
 
-scrape1xBet();
+async function main() {
+  console.log('🚀 DigifastBot démarré');
+  while (true) {
+    await scrape1xBet();
+    await new Promise(r => setTimeout(r, 30 * 1000)); // pause 30 secondes
+  }
+}
+
+main();
